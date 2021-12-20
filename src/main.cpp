@@ -55,7 +55,9 @@ void loop() {
   if (currenMillis - prevMillisClockLoop > 1000 && !programmMode->isInProgrammMode()) {
     prevMillisClockLoop = currenMillis;
     ledClock->displayTime(hourFormat12(), minute(), second());
+#ifdef DEBUG_MODE
     digitalClockDisplay();
+#endif
   }
 
   if (currenMillis - prevMillisBrightnessLoop > 3600000 && !programmMode->isInProgrammMode()) {
