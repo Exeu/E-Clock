@@ -98,8 +98,6 @@ class ProgrammMode {
             Serial.println(clicks);
 
             if (clicks == 1) {
-
-
                 this->currentMode = 1;
                 int currHour = hourFormat12();
                 if (currHour == 12) {
@@ -116,7 +114,6 @@ class ProgrammMode {
                 this->currentMode = 2;
                 Serial.println("Progmode 2");
                 Serial.println(currentMode);
-
             }
 
             if (clicks == 3) {
@@ -156,10 +153,12 @@ class ProgrammMode {
                 encoder->setPosition(encoderPos);
             }
 
-            if (encoderPos > 255) {
-                encoderPos = 255;
+            if (encoderPos > 17) {
+                encoderPos = 17;
                 encoder->setPosition(encoderPos);
             }
+
+            encoderPos = encoderPos * 15;
 
             if (encoderPos != currentBrightness) {
                 ledClock_->updateBrightness(encoderPos);

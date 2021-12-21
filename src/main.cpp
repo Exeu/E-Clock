@@ -6,6 +6,8 @@
 #include "rotary_switch.h"
 #include "programm_mode.h"
 
+#define DEBUG_MODE 
+
 LedTime *ledTime;
 LedClock *ledClock;
 RotarySwitch *rotarySwitch;
@@ -55,8 +57,9 @@ void loop() {
   if (currenMillis - prevMillisClockLoop > 1000 && !programmMode->isInProgrammMode()) {
     prevMillisClockLoop = currenMillis;
     ledClock->displayTime(hourFormat12(), minute(), second());
+    
 #ifdef DEBUG_MODE
-    digitalClockDisplay();
+    ledTime->digitalClockDisplay();
 #endif
   }
 

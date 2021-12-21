@@ -18,21 +18,18 @@ class LedClock {
         void init() {
             EEPROM.get(0, brightnessPos);
             Serial.println(brightnessPos);
-            if (brightnessPos == 1) {
+            if (brightnessPos == -1) {
                 brightnessPos = 255;
                 EEPROM.put(0, brightnessPos);
             }
 
             FastLED.addLeds<WS2812B, 2, GRB>(this->leds, 60);
-            FastLED.setBrightness(brightnessPos);
             FastLED.clear();
             FastLED.show();
         }
 
         void displayTime(int hour, int minute, int second) {
             FastLED.clear();
-
-            this->insertHourMarkers();
 
             if (hour == 12) {
                 hour = 0;
@@ -41,10 +38,34 @@ class LedClock {
             int currentSecondPos = second;
             int currentMinutePos = minute;
             int currentHourPos = (hour * 5);
+            int briSubstraction = 255 - getCurrentBrightness();
 
-            leds[currentMinutePos] = CRGB::Blue;
-            leds[currentHourPos] = CRGB::Green;
-            leds[currentSecondPos] = CRGB::Red;
+            leds[currentMinutePos] = 0x0000FF;
+            leds[currentMinutePos].subtractFromRGB(briSubstraction);
+
+            leds[currentHourPos] = 0x00FF00;
+            leds[currentHourPos].subtractFromRGB(briSubstraction);
+
+            leds[currentSecondPos] = 0xFF0000;
+            leds[currentSecondPos].subtractFromRGB(briSubstraction);
+
+            int previousSecond = currentSecondPos - 1;
+            if (previousSecond < 0) {
+                previousSecond = 59;
+            }
+
+            leds[previousSecond] = 0xFF0000;
+            leds[previousSecond].subtractFromRGB(250);
+
+            int nextSecond = currentSecondPos + 1;
+            if (nextSecond > 59) {
+                nextSecond = 0;
+            }
+
+            leds[nextSecond] = 0xFF0000;
+            leds[nextSecond].subtractFromRGB(250);
+
+            this->insertHourMarkers();
 
             FastLED.show();
         }
@@ -57,10 +78,9 @@ class LedClock {
             if (hour == 12) {
                 hour = 0;
             }
+
             int currentHourPos = (hour * 5);
-
             leds[currentHourPos] = CRGB::Green;
-
             FastLED.show();
         }
 
@@ -84,6 +104,10 @@ class LedClock {
 
         void insertHourMarkers() {
             for (int s = 0; s < 4; s++) {
+                if ((int) leds[hourMarkers[s]] > 0) {
+                    continue;
+                }
+
                 leds[hourMarkers[s]] = CRGB::White;
                 leds[hourMarkers[s]].subtractFromRGB(250);
             }
@@ -100,7 +124,6 @@ class LedClock {
 
             brightnessPos = brightness;
             Serial.println(brightnessPos);
-            FastLED.setBrightness(brightnessPos);
         }
 
         void saveBrightnessToEEPROM() {
