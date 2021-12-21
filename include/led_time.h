@@ -22,11 +22,6 @@ class LedTime {
             Serial.print(__DATE__);
             Serial.println(__TIME__);
 
-            //--------RTC SETUP ------------
-            // if you are using ESP-01 then uncomment the line below to reset the pins to
-            // the available pins for SDA, SCL
-            // Wire.begin(0, 2); // due to limited pins, use pin 0 and 2 for SDA, SCL
-            
             Rtc.Begin();
             Serial.println("Begin RTC....");
 
@@ -37,24 +32,12 @@ class LedTime {
             {
                 if (Rtc.LastError() != 0)
                 {
-                    // we have a communications error
-                    // see https://www.arduino.cc/en/Reference/WireEndTransmission for 
-                    // what the number means
                     Serial.print("RTC communications error = ");
                     Serial.println(Rtc.LastError());
                 }
                 else
                 {
-                    // Common Causes:
-                    //    1) first time you ran and the device wasn't running yet
-                    //    2) the battery on the device is low or even missing
-
                     Serial.println("RTC lost confidence in the DateTime!");
-
-                    // following line sets the RTC to the date & time this sketch was compiled
-                    // it will also reset the valid flag internally unless the Rtc device is
-                    // having an issue
-
                     Rtc.SetDateTime(compiled);
                 }
             }
@@ -119,6 +102,7 @@ class LedTime {
 
         void printDateTime(const RtcDateTime& dt) {
             char datestring[20];
+            Serial.print("Current RTC Time: ");
             snprintf_P(datestring, 
                     countof(datestring),
                     PSTR("%02u/%02u/%04u %02u:%02u:%02u"),
@@ -128,7 +112,7 @@ class LedTime {
                     dt.Hour(),
                     dt.Minute(),
                     dt.Second() );
-            Serial.print(datestring);
+            Serial.println(datestring);
         }
 };
 

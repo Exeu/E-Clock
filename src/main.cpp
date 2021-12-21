@@ -5,8 +5,12 @@
 #include "led_time.h"
 #include "rotary_switch.h"
 #include "programm_mode.h"
+#include "main.h"
 
-#define DEBUG_MODE 
+//#define DEBUG_MODE 
+#define TIME_HEADER  "T"  
+#define GET_TIME_HEADER "G"
+#define COLOR_HEADER "C"
 
 LedTime *ledTime;
 LedClock *ledClock;
@@ -50,6 +54,10 @@ void loop() {
   static long prevMillisClockLoop = 0;
   static long prevMillisBrightnessLoop = 0;
 
+  if (Serial.available()) {
+    processSyncMessage();
+  }
+
   long currenMillis = millis();
 
   programmMode->programmMode();
@@ -67,7 +75,33 @@ void loop() {
       prevMillisBrightnessLoop = currenMillis;
       ledClock->saveBrightnessToEEPROM();
   }
+}
 
-  delay(5);
+void processSyncMessage() {
+  unsigned long pctime;
+  const unsigned long DEFAULT_TIME = 1357041600;
+
+  if(Serial.find(TIME_HEADER)) {
+     pctime = Serial.parseInt();
+     if( pctime >= DEFAULT_TIME) {
+       setTime(pctime);
+       RtcDateTime newDateTime = RtcDateTime(year() - 2000, month(), day(), hour(), minute(), second());
+       Rtc.SetDateTime(newDateTime);
+       Serial.println("Set time");
+     }
+  } else if (Serial.find(GET_TIME_HEADER)) {
+      ledTime->digitalClockDisplay();
+      Serial.println("");
+      RtcDateTime currentRtcTime = ledTime->getCurrentRtcDateTime();
+      ledTime->printDateTime(currentRtcTime);
+  } else if (Serial.find(COLOR_HEADER)) {
+      String transmittedColorConfigs = Serial.readString();
+
+      String hour = transmittedColorConfigs.substring(0, 8);
+      String minute = transmittedColorConfigs.substring(9, 17);
+      String second = transmittedColorConfigs.substring(18, 27);
+      
+      ledClock->updateColors(strtol(hour.c_str(), NULL, 16), strtol(minute.c_str(), NULL, 16), strtol(second.c_str(), NULL, 16));
+  }
 }
 

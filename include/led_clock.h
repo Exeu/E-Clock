@@ -4,20 +4,45 @@
 #include "FastLED.h"
 #include <EEPROM.h>
 
+#define DEFAULT_COLOR_HOUR 0x00FF00
+#define DEFAULT_COLOR_MINUTE 0x0000FF
+#define DEFAULT_COLOR_SECOND 0xFF0000
+
+#define EEPROM_NOTSET 0xFFFFFFFF
+
+struct ColorConfig {
+    uint32_t hour;
+    uint32_t minute;
+    uint32_t second;
+};
+
 class LedClock {
     private:
         int ledPin_;
         CRGB leds[60];
         int hourMarkers[4] = {0, 15, 30, 45};
         int brightnessPos;
+        ColorConfig colorConfig_ = { DEFAULT_COLOR_HOUR, DEFAULT_COLOR_MINUTE, DEFAULT_COLOR_SECOND };
     public:
         LedClock(int ledPin) {
             ledPin_ = ledPin;
         };
 
         void init() {
+            EEPROM.get(10, colorConfig_);
+            if (colorConfig_.hour == EEPROM_NOTSET && colorConfig_.minute == EEPROM_NOTSET && colorConfig_.second == EEPROM_NOTSET) {
+                Serial.println("No color config found in EEPRO... Setting default.");
+                colorConfig_ = { DEFAULT_COLOR_HOUR, DEFAULT_COLOR_MINUTE, DEFAULT_COLOR_SECOND };
+                EEPROM.put(10, colorConfig_);
+            }
+
+            Serial.println("Color config: ");
+            Serial.println(colorConfig_.hour);
+            Serial.println(colorConfig_.minute);
+            Serial.println(colorConfig_.second);
+            
             EEPROM.get(0, brightnessPos);
-            Serial.println(brightnessPos);
+            //Serial.println(brightnessPos);
             if (brightnessPos == -1) {
                 brightnessPos = 255;
                 EEPROM.put(0, brightnessPos);
@@ -40,13 +65,13 @@ class LedClock {
             int currentHourPos = (hour * 5);
             int briSubstraction = 255 - getCurrentBrightness();
 
-            leds[currentMinutePos] = 0x0000FF;
+            leds[currentMinutePos] = colorConfig_.minute;
             leds[currentMinutePos].subtractFromRGB(briSubstraction);
 
-            leds[currentHourPos] = 0x00FF00;
+            leds[currentHourPos] = colorConfig_.hour;
             leds[currentHourPos].subtractFromRGB(briSubstraction);
 
-            leds[currentSecondPos] = 0xFF0000;
+            leds[currentSecondPos] = colorConfig_.second;
             leds[currentSecondPos].subtractFromRGB(briSubstraction);
 
             int previousSecond = currentSecondPos - 1;
@@ -54,7 +79,7 @@ class LedClock {
                 previousSecond = 59;
             }
 
-            leds[previousSecond] = 0xFF0000;
+            leds[previousSecond] = colorConfig_.second;
             leds[previousSecond].subtractFromRGB(250);
 
             int nextSecond = currentSecondPos + 1;
@@ -62,7 +87,7 @@ class LedClock {
                 nextSecond = 0;
             }
 
-            leds[nextSecond] = 0xFF0000;
+            leds[nextSecond] = colorConfig_.second;
             leds[nextSecond].subtractFromRGB(250);
 
             this->insertHourMarkers();
@@ -129,6 +154,19 @@ class LedClock {
         void saveBrightnessToEEPROM() {
             Serial.println("save value to eeprom");
             EEPROM.update(0, brightnessPos);
+        }
+
+        void updateColors(uint32_t hour, uint32_t minute, uint32_t second) {
+            Serial.println("Updateing colors..");
+            Serial.println(hour);
+            Serial.println(minute);
+            Serial.println(second);
+            
+            colorConfig_.hour = hour;
+            colorConfig_.minute = minute;
+            colorConfig_.second = second;
+
+            EEPROM.put(10, colorConfig_);
         }
 };
 
