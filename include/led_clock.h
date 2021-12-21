@@ -105,7 +105,7 @@ class LedClock {
             }
 
             int currentHourPos = (hour * 5);
-            leds[currentHourPos] = CRGB::Green;
+            leds[currentHourPos] = colorConfig_.hour;
             FastLED.show();
         }
 
@@ -121,9 +121,9 @@ class LedClock {
             int currentMinutePos = minute;
             int currentHourPos = (hour * 5);
 
-            leds[currentMinutePos] = CRGB::Blue;
-            leds[currentHourPos] = CRGB::Green;
-
+            leds[currentHourPos] = colorConfig_.hour;
+            leds[currentMinutePos] = colorConfig_.minute;
+            
             FastLED.show();
         }
 
