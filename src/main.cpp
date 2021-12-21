@@ -1,3 +1,11 @@
+/**
+ * Serial commands:
+ * 
+ * C0x00FF00,0xFF0000,0x0000FF -> Update led color C<HOUR>,<MINUTE>,<SECOND>
+ * G -> Gets current time settings
+ * T1357041600 -> Sets current time to unix timestamp T<TIMESTAMP>
+ */
+
 
 #include <Arduino.h>
 #include "TimeLib.h"
