@@ -4,6 +4,7 @@
  * C0x00FF00,0xFF0000,0x0000FF -> Update led color C<HOUR>,<MINUTE>,<SECOND>
  * G -> Gets current time settings
  * T1357041600 -> Sets current time to unix timestamp T<TIMESTAMP>
+ * RC -> Reset colors to default
  */
 
 
@@ -110,6 +111,8 @@ void processSyncMessage() {
       String second = transmittedColorConfigs.substring(18, 27);
       
       ledClock->updateColors(strtol(hour.c_str(), NULL, 16), strtol(minute.c_str(), NULL, 16), strtol(second.c_str(), NULL, 16));
+  } else if (Serial.find("R")) {
+      Serial.println("Resetting colors to default");
+      ledClock->updateColors(DEFAULT_COLOR_HOUR, DEFAULT_COLOR_MINUTE, DEFAULT_COLOR_SECOND);
   }
 }
-
