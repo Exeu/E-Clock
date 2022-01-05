@@ -10,84 +10,84 @@ class ProgrammMode {
     RotarySwitch *rotarySwitch_;
     LedClock *ledClock_;
 
-    static ProgrammMode* anchor;
-    RotaryEncoder *encoder = nullptr;
+    static ProgrammMode* anchor_;
+    RotaryEncoder *encoder_ = nullptr;
     byte pinA_;
     byte pinB_;
-    bool _programmMode = false;
-    int currentMode = 0;
+    bool programmMode_ = false;
+    int currentMode_ = 0;
     
-    int programmedHour = 0;
-    int programmedMinute = 0;
+    int programmedHour_ = 0;
+    int programmedMinute_ = 0;
 
     void isr() {
-      encoder->tick();
+      encoder_->tick();
     }
     
     static void marshall() {
-      anchor->isr();
+      anchor_->isr();
     }
 
     void mode1() {
         ledClock_->insertHourMarkers();
 
-        int encoderPosition = encoder->getPosition();
+        int encoderPosition = encoder_->getPosition();
         if (encoderPosition < 0) {
             encoderPosition = 0;
-            encoder->setPosition(encoderPosition);
+            encoder_->setPosition(encoderPosition);
         }
         if (encoderPosition > 11) {
             encoderPosition = 11;
-            encoder->setPosition(11);
+            encoder_->setPosition(11);
         }
 
         ledClock_->displayTime(encoderPosition);
-        programmedHour = encoderPosition;
+        programmedHour_ = encoderPosition;
     }
 
     void mode2() {
         ledClock_->insertHourMarkers();
 
-        int encoderPosition = encoder->getPosition();
+        int encoderPosition = encoder_->getPosition();
         if (encoderPosition < 0) {
             encoderPosition = 0;
-            encoder->setPosition(encoderPosition);
+            encoder_->setPosition(encoderPosition);
         }
         if (encoderPosition > 59) {
             encoderPosition = 59;
-            encoder->setPosition(59);
+            encoder_->setPosition(59);
         }
 
-        ledClock_->displayTime(programmedHour, encoderPosition);
-        programmedMinute = encoderPosition;
+        ledClock_->displayTime(programmedHour_, encoderPosition);
+        programmedMinute_ = encoderPosition;
     }
 
   public:
     ProgrammMode(byte pinA, byte pinB, RotarySwitch &rotarySwitch, LedClock &ledClock): rotarySwitch_(&rotarySwitch), ledClock_(&ledClock) {
-      anchor = this;
-      pinA_ = pinA;
-      pinB_ = pinB;
+        anchor_ = this;
+        pinA_ = pinA;
+        pinB_ = pinB;
     }
 
     void begin() {
-        encoder = new RotaryEncoder(pinA_, pinB_, RotaryEncoder::LatchMode::FOUR0);
+        encoder_ = new RotaryEncoder(pinA_, pinB_, RotaryEncoder::LatchMode::FOUR0);
 
         attachInterrupt(digitalPinToInterrupt(pinA_), ProgrammMode::marshall, CHANGE);
         attachInterrupt(digitalPinToInterrupt(pinB_), ProgrammMode::marshall, CHANGE);
 
-        encoder->setPosition(ledClock_->getCurrentBrightness());
+        encoder_->setPosition(ledClock_->getCurrentBrightness());
     }
 
     int getEncoderPos() {
-        return encoder->getPosition();
+        return encoder_->getPosition();
     }
 
     RotaryEncoder::Direction getEncoderDirection() {
-        return encoder->getDirection();
+        return encoder_->getDirection();
     }
 
     bool isInProgrammMode() {
-        return currentMode > 0;
+        return currentMode_ > 0;
     }
 
     // programmMode Loop
@@ -98,43 +98,42 @@ class ProgrammMode {
             Serial.println(clicks);
 
             if (clicks == 1) {
-                this->currentMode = 1;
+                this->currentMode_ = 1;
                 int currHour = hourFormat12();
                 if (currHour == 12) {
                     currHour = 0;
                 }
 
-                encoder->setPosition(currHour);
+                encoder_->setPosition(currHour);
                 Serial.println("Progmode 1");
-                Serial.println(currentMode);
-
+                Serial.println(currentMode_);
             }
 
             if (clicks == 2) {
-                this->currentMode = 2;
+                this->currentMode_ = 2;
                 Serial.println("Progmode 2");
-                Serial.println(currentMode);
+                Serial.println(currentMode_);
             }
 
             if (clicks == 3) {
                 Serial.println("Return");
-                Serial.println(currentMode);
+                Serial.println(currentMode_);
 
-                this->currentMode = 0;
+                this->currentMode_ = 0;
                 rotarySwitch_->resetNbClicks();
 
-                RtcDateTime newDateTime = RtcDateTime(year() - 2000, month(), day(), programmedHour, programmedMinute, 0);
+                RtcDateTime newDateTime = RtcDateTime(year() - 2000, month(), day(), programmedHour_, programmedMinute_, 0);
                 Rtc.SetDateTime(newDateTime);
                 setTime(newDateTime.Epoch32Time());
 
-                encoder->setPosition(ledClock_->getCurrentBrightness());
+                encoder_->setPosition(ledClock_->getCurrentBrightness());
             }
 
             return;
         }
 
         if (isInProgrammMode()) {
-            switch (currentMode) {
+            switch (currentMode_) {
                 case 1:
                     mode1();
                     break;
@@ -146,25 +145,25 @@ class ProgrammMode {
             }
         } else {
             int currentBrightness = ledClock_->getCurrentBrightness();
-            int encoderPos = encoder->getPosition();
+            int encoderPos = encoder_->getPosition();
 
             if (encoderPos < 1) {
                 encoderPos = 1;
-                encoder->setPosition(encoderPos);
+                encoder_->setPosition(encoderPos);
             }
 
             if (encoderPos > 17) {
                 encoderPos = 17;
-                encoder->setPosition(encoderPos);
+                encoder_->setPosition(encoderPos);
             }
 
             encoderPos = encoderPos * 15;
-
             if (encoderPos != currentBrightness) {
                 ledClock_->updateBrightness(encoderPos);
+                ledClock_->displayTime(hourFormat12(), minute(), second());
             }
         }
     }
 };
 
-ProgrammMode* ProgrammMode::anchor = NULL;
+ProgrammMode* ProgrammMode::anchor_ = NULL;

@@ -27,7 +27,6 @@ RotarySwitch *rotarySwitch;
 ProgrammMode *programmMode;
 
 // Button
-
 void click() {
     rotarySwitch->isr0();
 };
