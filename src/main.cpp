@@ -1,12 +1,11 @@
 /**
  * Serial commands:
- * 
+ *
  * C0x00FF00,0xFF0000,0x0000FF -> Update led color C<HOUR>,<MINUTE>,<SECOND>
  * G -> Gets current time settings
  * T1357041600 -> Sets current time to unix timestamp T<TIMESTAMP>
  * RC -> Reset colors to default
  */
-
 
 #include <Arduino.h>
 #include "TimeLib.h"
@@ -16,8 +15,8 @@
 #include "programm_mode.h"
 #include "main.h"
 
-//#define DEBUG_MODE 
-#define TIME_HEADER  "T"  
+//#define DEBUG_MODE
+#define TIME_HEADER "T"
 #define GET_TIME_HEADER "G"
 #define COLOR_HEADER "C"
 
@@ -27,23 +26,26 @@ RotarySwitch *rotarySwitch;
 ProgrammMode *programmMode;
 
 // Button
-void click() {
-    rotarySwitch->isr0();
+void click()
+{
+  rotarySwitch->isr0();
 };
 
-time_t syncSysTime() {
+time_t syncSysTime()
+{
   RtcDateTime currentRtcTime = ledTime->getCurrentRtcDateTime();
   return currentRtcTime.Epoch32Time();
 }
 
 // ##############
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
 
   ledTime = new LedTime();
   ledTime->init();
-  
+
   ledClock = new LedClock(2);
   ledClock->init();
 
@@ -58,11 +60,13 @@ void setup() {
   programmMode->begin();
 }
 
-void loop() {
+void loop()
+{
   static long prevMillisClockLoop = 0;
   static long prevMillisBrightnessLoop = 0;
 
-  if (Serial.available()) {
+  if (Serial.available())
+  {
     processSyncMessage();
   }
 
@@ -70,48 +74,59 @@ void loop() {
 
   programmMode->programmMode();
 
-  if (currenMillis - prevMillisClockLoop > 1000 && !programmMode->isInProgrammMode()) {
+  if (currenMillis - prevMillisClockLoop > 1000 && !programmMode->isInProgrammMode())
+  {
     prevMillisClockLoop = currenMillis;
     ledClock->displayTime(hourFormat12(), minute(), second());
-    
+
 #ifdef DEBUG_MODE
     ledTime->digitalClockDisplay();
 #endif
   }
 
-  if (currenMillis - prevMillisBrightnessLoop > 3600000 && !programmMode->isInProgrammMode()) {
-      prevMillisBrightnessLoop = currenMillis;
-      ledClock->saveBrightnessToEEPROM();
+  if (currenMillis - prevMillisBrightnessLoop > 3600000 && !programmMode->isInProgrammMode())
+  {
+    prevMillisBrightnessLoop = currenMillis;
+    ledClock->saveBrightnessToEEPROM();
   }
 }
 
-void processSyncMessage() {
+void processSyncMessage()
+{
   unsigned long pctime;
   const unsigned long DEFAULT_TIME = 1357041600;
 
-  if(Serial.find(TIME_HEADER)) {
-     pctime = Serial.parseInt();
-     if( pctime >= DEFAULT_TIME) {
-       setTime(pctime);
-       RtcDateTime newDateTime = RtcDateTime(year() - 2000, month(), day(), hour(), minute(), second());
-       Rtc.SetDateTime(newDateTime);
-       Serial.println("Set time");
-     }
-  } else if (Serial.find(GET_TIME_HEADER)) {
-      ledTime->digitalClockDisplay();
-      Serial.println("");
-      RtcDateTime currentRtcTime = ledTime->getCurrentRtcDateTime();
-      ledTime->printDateTime(currentRtcTime);
-  } else if (Serial.find(COLOR_HEADER)) {
-      String transmittedColorConfigs = Serial.readString();
+  if (Serial.find(TIME_HEADER))
+  {
+    pctime = Serial.parseInt();
+    if (pctime >= DEFAULT_TIME)
+    {
+      setTime(pctime);
+      RtcDateTime newDateTime = RtcDateTime(year() - 2000, month(), day(), hour(), minute(), second());
+      Rtc.SetDateTime(newDateTime);
+      Serial.println("Set time");
+    }
+  }
+  else if (Serial.find(GET_TIME_HEADER))
+  {
+    ledTime->digitalClockDisplay();
+    Serial.println("");
+    RtcDateTime currentRtcTime = ledTime->getCurrentRtcDateTime();
+    ledTime->printDateTime(currentRtcTime);
+  }
+  else if (Serial.find(COLOR_HEADER))
+  {
+    String transmittedColorConfigs = Serial.readString();
 
-      String hour = transmittedColorConfigs.substring(0, 8);
-      String minute = transmittedColorConfigs.substring(9, 17);
-      String second = transmittedColorConfigs.substring(18, 27);
-      
-      ledClock->updateColors(strtol(hour.c_str(), NULL, 16), strtol(minute.c_str(), NULL, 16), strtol(second.c_str(), NULL, 16));
-  } else if (Serial.find("R")) {
-      Serial.println("Resetting colors to default");
-      ledClock->updateColors(DEFAULT_COLOR_HOUR, DEFAULT_COLOR_MINUTE, DEFAULT_COLOR_SECOND);
+    String hour = transmittedColorConfigs.substring(0, 8);
+    String minute = transmittedColorConfigs.substring(9, 17);
+    String second = transmittedColorConfigs.substring(18, 27);
+
+    ledClock->updateColors(strtol(hour.c_str(), NULL, 16), strtol(minute.c_str(), NULL, 16), strtol(second.c_str(), NULL, 16));
+  }
+  else if (Serial.find("R"))
+  {
+    Serial.println("Resetting colors to default");
+    ledClock->updateColors(DEFAULT_COLOR_HOUR, DEFAULT_COLOR_MINUTE, DEFAULT_COLOR_SECOND);
   }
 }
